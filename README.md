@@ -22,7 +22,7 @@ Moreover, **tokens can bypass Conditional Access Policies (CAP)** that enforce M
      - `password`
      - `refresh_token`
      - `device_code`
-     - `jwt_assertion` and `jwt_assertion by key vault sign` (for certificates and Key Vault-based JWT signing)
+     - `jwt_assertion` and `jwt_assertion via key vault sign` (for certificates and Key Vault-based JWT signing)
   
 - **Advanced JWT Signing**:
    - Sign JWTs using a compromised certificate or through Azure Key Vault signing permissions, giving flexibility depending on the environment being 
