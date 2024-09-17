@@ -133,7 +133,7 @@ For red teams using Azure Key Vault to sign JWT tokens.
 ```powershell
 Invoke-Sato -GrantType "jwt_assertion_sign" -TenantID "target-tenant-id" -AppID "target-sp-id" -KeyVaultName "key vault-name" -CertName "certificate-name" -KeyToken "keyvault-access-token"
 ```
-When using the jwt_assertion_sign grant type, you must have signing permissions on an Azure Key Vault. This method takes advantage of Key Vault's signing capabilities to sign a crafted jwt token and exchange it for a valid Azure token.
+When using the jwt_assertion_sign option, you must have signing permissions on an Azure Key Vault. This method takes advantage of Key Vault's signing capabilities to sign a crafted jwt token and exchange it for a valid Azure token.
 
 
 ### Device Code Flow
