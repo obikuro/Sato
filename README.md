@@ -52,7 +52,7 @@ To use **SATO**, follow these steps:
 
 2. Import the module in PowerShell:
     ```powershell
-    Import-Module .\SATO.psd1
+    Import-Module .\Sato\SATO.psd1
     ```
 
 ---
