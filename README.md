@@ -25,7 +25,7 @@ Moreover, **tokens can bypass Conditional Access Policies (CAP)** that enforce M
      - `jwt_assertion` and `jwt_assertion via key vault sign` (for certificates and Key Vault-based JWT signing)
   
 - **Advanced JWT Signing**:
-   - Sign JWTs using a compromised certificate or through Azure Key Vault signing permissions, giving flexibility depending on the environment being 
+   - Sign JWTs using a compromised certificate or through Azure Key Vault signing permissions, giving flexibility depending on the environment being targeted
 
 - **Predefined Scopes**:
    - Easily select common Azure scopes (like **Microsoft Graph**, **Office 365**, or **Azure Key Vault**) through predefined options, simplifying the process of token requests.
