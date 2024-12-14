@@ -22,6 +22,7 @@ Moreover, **tokens can bypass Conditional Access Policies (CAP)** that enforce M
      - `password`
      - `refresh_token`
      - `device_code`
+     - `estsauthcookie`
      - `jwt_assertion` and `jwt_assertion via key vault sign` (for certificates and Key Vault-based JWT signing)
   
 - **Advanced JWT Signing**:
@@ -65,6 +66,7 @@ The following **OAuth2 grant types** are supported by SATO:
 - **`password`**: Exchanges a username and password for tokens.
 - **`refresh_token`**: Uses a refresh token to obtain a new access token.
 - **`device_code`**: Interactive login -- device code phishing
+- **`estsauthcookie`** Uses ESTSAuth cookie (e.g., from AitM phishing) for token acquisition.
 - **`jwt_assertion`**: Uses certificates private key for token acquisition.
 - **`jwt_assertion_sign`**: Signs a JWT using Azure Key Vault signing permissions for token acquisition.
 
@@ -141,6 +143,14 @@ use this grant for device code phishing scenarios
 
 ```powershell
 Invoke-Sato -GrantType "device_code" -TenantID "target-tenant-id"  -Scope "<https://graph.microsoft.com/.default>"
+```
+
+### ESTSAuth Cookie Flow
+Use this grant after obtaining an ESTSAuth or ESTSAuthPersistent cookie from AitM or session token theft.
+Note that only certain clientId and scope combinations are supported for this flow.
+
+```powershell
+Invoke-Sato -GrantType "estsauthcookie" -Cookie $cookie -TenantID "target-tenant-id" -PredefinedScope MSGraph -ClientId 1fec8e78-bce4-4aaf-ab1b-5451cc387264
 ```
 
 
