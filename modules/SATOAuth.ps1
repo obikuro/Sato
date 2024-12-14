@@ -176,3 +176,79 @@ function Get-DeviceCodeToken {
         Write-Error "Error obtaining token via device code: $_"
     }
 }
+
+
+function Get-EstsAuthCookieToken {
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateSet("1fec8e78-bce4-4aaf-ab1b-5451cc387264", "1950a258-227b-4e31-a9cf-717495945fc2", "ecd6b820-32c2-49b6-98a6-444530e5a77a")]
+        [string]$ClientID,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ESTSAuthCookie,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Scope
+    )
+
+    $Resource = ($Scope.Split('/')[0..2] -join '/') + '/'
+
+    $Headers = @{}
+    $cookie = "ESTSAUTH=$($ESTSAuthCookie)"
+    $session = [Microsoft.PowerShell.Commands.WebRequestSession]::new()
+    $cookie = [System.Net.Cookie]::new("ESTSAUTH", "$($ESTSAuthCookie)")
+    $session.Cookies.Add('https://login.microsoftonline.com/', $cookie)
+    $state = [System.Guid]::NewGuid().ToString()
+    $redirect_uri = ([System.Uri]::EscapeDataString("https://login.microsoftonline.com/common/oauth2/nativeclient"))
+
+    try {
+        if ($PSVersionTable.PSVersion.Major -lt 7) {
+            $sts_response = Invoke-WebRequest -UseBasicParsing -MaximumRedirection 0 -ErrorAction SilentlyContinue -WebSession $session -Method Get -Uri "https://login.microsoftonline.com/common/oauth2/authorize?response_type=code&client_id=$($ClientID)&resource=$($Resource)&redirect_uri=$($redirect_uri)&state=$($state)" -Headers $Headers
+        } else {
+            $sts_response = Invoke-WebRequest -UseBasicParsing -SkipHttpErrorCheck -MaximumRedirection 0 -ErrorAction SilentlyContinue -WebSession $session -Method Get -Uri "https://login.microsoftonline.com/common/oauth2/authorize?response_type=code&client_id=$($ClientID)&resource=$($Resource)&redirect_uri=$($redirect_uri)&state=$($state)" -Headers $Headers
+        }
+
+        if ($sts_response.StatusCode -eq 302) {
+            $uri = if ($PSVersionTable.PSVersion.Major -lt 7) {
+                [System.Uri]$sts_response.Headers.Location
+            } else {
+                [System.Uri]$sts_response.Headers.Location[0]
+            }
+
+            $query = $uri.Query.TrimStart('?')
+            $queryParams = @{ }
+            $paramPairs = $query.Split('&')
+
+            foreach ($pair in $paramPairs) {
+                $parts = $pair.Split('=')
+                $key = $parts[0]
+                $value = $parts[1]
+                $queryParams[$key] = $value
+            }
+
+            if ($queryParams.ContainsKey('code')) {
+                $refreshToken = $queryParams['code']
+            } else {
+                throw [System.Exception] "Authorization code not found in redirected URL path. Redirect Location: $($sts_response.Headers.Location | Out-String)"
+            }
+        } else {
+            throw [System.Exception] "No redirect from authorization code request. Full response: $($sts_response.RawContent | Out-String)"
+        }
+
+        if ($refreshToken) {
+            $body = @{
+                "resource"     = $Resource
+                "client_id"    = $ClientID
+                "grant_type"   = "authorization_code"
+                "redirect_uri" = "https://login.microsoftonline.com/common/oauth2/nativeclient"
+                "code"         = $refreshToken
+                "scope"        = "openid"
+            }
+
+            $response = Invoke-RestMethod -UseBasicParsing -Method Post -Uri "https://login.microsoftonline.com/common/oauth2/token" -Headers $Headers -Body $body
+            return $response
+        }
+    } catch {
+        throw [System.Exception] "Error during token retrieval: $($_.Exception.Message)"
+    }
+}
