@@ -210,21 +210,17 @@ function Invoke-Sato {
         Write-Host "Access Token:" -ForegroundColor DarkGreen
         Write-Output $response.access_token
 
-        $result = @{
-            access_token = $response.access_token
-        }
-
         if ($response.refresh_token) {
             Write-Host "Refresh Token:" -ForegroundColor DarkGreen
             Write-Output $response.refresh_token
-            $result.refresh_token = $response.refresh_token
+
         }
 
         if ($Decode) {
             Decode-Jwt -Token $response.access_token
         }
 
-        Set-Variable -Name $SaveToVar -Value $result -Scope Global
+        Set-Variable -Name $SaveToVar -Value $response -Scope Global
         Write-Host "Tokens saved to variable: `$${SaveToVar}" -ForegroundColor Green
     }
 }
