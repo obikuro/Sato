@@ -20,8 +20,8 @@ function Create-JwtHeaderPayload {
     
     $StartDate = [datetime]::UtcNow.AddSeconds(-10)
     $EndDate = [datetime]::UtcNow.AddMinutes(5)
-    $JWTExpiration = [math]::Round(($EndDate - [datetime]"1970-01-01T00:00:00Z").TotalSeconds)
-    $NotBefore = [math]::Round(($StartDate - [datetime]"1970-01-01T00:00:00Z").TotalSeconds)
+    $JWTExpiration = [math]::Round(($EndDate - ([datetime]"1970-01-01T00:00:00Z").ToUniversalTime()).TotalSeconds)
+    $NotBefore = [math]::Round(($StartDate - ([datetime]"1970-01-01T00:00:00Z").ToUniversalTime()).TotalSeconds)
 
     
     $jwtHeader = @{
