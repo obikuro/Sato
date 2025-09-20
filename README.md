@@ -154,6 +154,62 @@ The `-UseCAE` flag is used to enable Continuous Access Evaluation (CAE). When yo
 By default, SATO uses a Microsoft client ID, which is part of the Family of Client IDs (FOCI). This allows for seamless multi-tenant access without providing a client secret.
 
 
+## TBRES Token Hunter 
+TBRES Token Hunter scans the Windows Token Broker cache for TBRES files, decrypts DPAPI-protected payloads, extracts valid Azure/Office tokens, and writes them to file. It also presents an operator-friendly banner, live progress, and a summary (files scanned, valid tokens, expired skipped, errors, unique tenants/resources and the files that contained tokens).
+
+### Why this matters
+Many Windows clients cache Azure/O365 tokens inside TBRES files. During an engagement , these artifacts can outlive password/secret changes. This hunter automates discovery + decrypt + parsing so you can quickly assess usable tokens.
+
+### How it works
+
+- Recursively searches: **%USERPROFILE%\AppData\Local\Microsoft\TokenBroker\Cache**
+
+- For each **.tbres** : reads, decrypts DPAPI when needed, parses TBRES response bytes, extracts the JWT, validates expiration, and records structured fields to a file.
+
+### Usage
+
+```powershell
+Import-Module .\SATO.psd1
+Invoke-TbresTokenHunter
+```
+
+### Optional examples
+• Include expired tokens:
+
+```powershell
+Invoke-TbresTokenHunter -IncludeExpired
+```
+
+• Scan a different directory:
+
+```powershell
+Invoke-TbresTokenHunter -TBRESDirectory "C:\Users<you>\AppData\Local\Microsoft\TokenBroker\Cache\xxxxx.tbres"
+```
+
+• Keep only specific audiences (aud):
+
+```powershell
+Invoke-TbresTokenHunter -ResourceFilter '00000003-0000-0000-c000-000000000000','d3590ed6-52b3-4102-aeff-aad2292ab01c'
+```
 
 
+## App ID → Friendly Name
+
+Get a human-friendly name for known resource/app IDs.
+
+```powershell
+Get-ApplicationNameById -AppId '<guid>'
+```
+
+The map lives in: 
+
+```powershell 
+.\modules\appId-map.psd1
+```
+
+Advanced override (optional):
+
+```
+$env:TBRES_APPID_MAP = "C:\path\to\custom-appId-map.psd1"
+```
 
