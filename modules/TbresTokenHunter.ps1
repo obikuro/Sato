@@ -18,9 +18,9 @@ function Show-Banner {
     )
 
     $name    = 'TBRES Token Hunter'
-    $version = 'v0.1'
+    $version = 'v1.0'
     $tsUtc   = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss 'UTC'")
-    $userHost= "$($env:USERNAME)@$($env:COMPUTERNAME)"
+    $Author  = "Edrian Miranda - Obikuro"
     $psver   = $PSVersionTable.PSVersion.ToString()
     $rfCount = if ($ResourceFilterValues) { $ResourceFilterValues.Count } else { 0 }
 
@@ -38,7 +38,7 @@ function Show-Banner {
     Write-Host ("{0} {1}" -f $name, $version) -ForegroundColor Magenta
     Write-Host $rule -ForegroundColor DarkGray
     Write-Host ("[*] Time (UTC)     : {0}" -f $tsUtc) -ForegroundColor Cyan
-    Write-Host ("[*] User@Host      : {0}" -f $userHost) -ForegroundColor Cyan
+    Write-Host ("[*] Author         : {0}" -f $Author) -ForegroundColor Cyan
     Write-Host ("[*] PowerShell     : {0}" -f $psver) -ForegroundColor Cyan
     Write-Host ("[*] Target Path    : {0}" -f $TargetPath) -ForegroundColor Cyan
     Write-Host ("[*] IncludeExpired : {0}" -f $IncludeExpiredFlag) -ForegroundColor Cyan
