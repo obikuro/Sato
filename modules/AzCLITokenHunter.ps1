@@ -67,10 +67,12 @@ if ([string]::IsNullOrEmpty($MSALCache)) {
     switch ([System.Environment]::OSVersion.Platform) {
         'Unix' {                  
             $MSALCache = "$HOME/.azure/msal_token_cache.json"
+            $DPAPI = $false
             break
         }
         'MacOSX' {               
             $MSALCache = "$HOME/.azure/msal_token_cache.json"
+            $DPAPI = $false
             break
         }
         default {                 # Windows (Win32NT)
@@ -80,6 +82,9 @@ if ([string]::IsNullOrEmpty($MSALCache)) {
         }
     }
 }
+
+if ($MSALCache -match '\.json$') { $DPAPI = $false }
+if ($MSALCache -match '\.bin$')  { $DPAPI = $true  }
 
 # calling banner 
 if (-not $DPAPI) { $DPAPI = $false }  
@@ -167,15 +172,37 @@ function Convert-FromEpoch {
 
 # CORE DPAPI decrypt 
 
-Add-Type -AssemblyName System.Security
 
-$decTokens = Get-BinaryContent $MSALCache
-$tokens = [text.encoding]::UTF8.GetString([System.Security.Cryptography.ProtectedData]::Unprotect($decTokens,$null,'CurrentUser'))
+if (-not (Test-Path -LiteralPath $MSALCache)) {
+    throw "MSAL cache not found at '$MSALCache'. Ensure Azure CLI has signed in on this profile."
+}
 
-# $tokens
+[string]$tokens = $null
+try {
+    if ($DPAPI) {
+        # Windows: DPAPI-protected binary cache (.bin)
+        Add-Type -AssemblyName System.Security
+        $decBytes = Get-BinaryContent $MSALCache
+        $unprot   = [System.Security.Cryptography.ProtectedData]::Unprotect($decBytes, $null, 'CurrentUser')
+        $tokens   = [Text.Encoding]::UTF8.GetString($unprot)
+    }
+    else {
+        # Linux/macOS: plain JSON file (.json)
+        $tokens = Get-Content -LiteralPath $MSALCache -Raw -ErrorAction Stop
+    }
+}
+catch {
+    throw "Failed to read/decrypt MSAL cache at '$MSALCache': $($_.Exception.Message)"
+}
 
+# Parse JSON
+try {
+    $objTokens = $tokens | ConvertFrom-Json -ErrorAction Stop
+}
+catch {
+    throw "MSAL cache content is not valid JSON. Path: '$MSALCache'. Error: $($_.Exception.Message)"
+}
 
-$objTokens = $tokens | ConvertFrom-Json
 
 
 
