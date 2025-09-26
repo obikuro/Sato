@@ -4,7 +4,7 @@
     RootModule        = 'SATO.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.1.0'
+    ModuleVersion     = '1.1.1'
 
     # ID used to uniquely identify this module
     GUID              = '6c1d7489-5160-468e-b8d9-10d1092afd90'
