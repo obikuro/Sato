@@ -165,6 +165,7 @@ function Process-MsalCacheFile {
 
     # Index RefreshToken
     $rtIndex = @{}
+    if ($null -ne $objTokens.RefreshToken) {
     foreach ($rt in ($objTokens.RefreshToken | Get-Member -MemberType NoteProperty)) {
         $rtProps = Parse-ObjectDefinition -Definition $rt.Definition
         if ([string]::IsNullOrWhiteSpace($rtProps.home_account_id)) { continue }
@@ -172,19 +173,21 @@ function Process-MsalCacheFile {
         $normTarget = Normalize-Target $rtProps.target
         $key = '{0}|{1}|{2}' -f $rtProps.home_account_id, $rtProps.client_id, $normTarget
         $rtIndex[$key] = $rtProps
-    }
+    } 
+}
 
     # build user map from Account
     $users = [ordered]@{}
+    if ($null -ne $objTokens.Account) {
     foreach ($acct in ($objTokens.Account | Get-Member -MemberType NoteProperty)) {
         $acctProps = Parse-ObjectDefinition -Definition $acct.Definition
         if ($acctProps.home_account_id) { $users[$acctProps.home_account_id] = $acctProps.username }
     }
-
+    }
     # join AccessToken -> RefreshToken
     $results = @()
     $nowSec  = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
-
+if ($null -ne $objTokens.AccessToken) {
     foreach ($at in ($objTokens.AccessToken | Get-Member -MemberType NoteProperty)) {
         $atProps = Parse-ObjectDefinition -Definition $at.Definition
 
@@ -241,7 +244,8 @@ function Process-MsalCacheFile {
             SourcePath           = $Path
         }
         $results += New-Object psobject -Property $attributes
-    }
+    } 
+}
 
     # === End:  pipeline ===
 
@@ -402,8 +406,13 @@ $access_tokens = @()
 if (Test-Path -LiteralPath $MSALCache) {
     $access_tokens += Process-MsalCacheFile -Path $MSALCache -Label 'AzureCLI'
 } else {
-    throw "MSAL cache not found at '$MSALCache'. Ensure Azure CLI has signed in on this profile."
+    if (-not $ServicePrincipalHunter -and -not $IdentityServiceHunter) {
+        throw "MSAL cache not found at '$MSALCache'. Ensure Azure CLI has signed in on this profile."
+    } else {
+        Write-Host "[!] MSAL cache not found at '$MSALCache'. Skipping MSAL token hunting and continuing with other modes." -ForegroundColor Yellow
+    }
 }
+
 
 # Optionally collect IdentityService caches (Az PowerShell & Graph PowerShell)
 if ($IdentityServiceHunter) {
