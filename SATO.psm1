@@ -67,14 +67,15 @@ $PredefinedGrantTypes = @(
     "refresh_token",
     "device_code",
     "jwt_assertion",
-    "jwt_assertion_sign"
+    "jwt_assertion_sign", 
+    "estsauthcookie"
 )
 
 
 function Invoke-Sato {
     param (
         [Parameter(Mandatory = $true)]
-        [ValidateSet("client_credentials", "password", "refresh_token", "device_code", "jwt_assertion", "jwt_assertion_sign")]
+        [ValidateSet("client_credentials", "password", "refresh_token", "device_code", "jwt_assertion", "jwt_assertion_sign", "estsauthcookie")]
         [string]$GrantType,
 
         [Parameter(Mandatory = $true)]
@@ -91,6 +92,9 @@ function Invoke-Sato {
 
         [Parameter()]
         [string]$Password,
+
+        [Parameter()]
+        [string]$Cookie,
 
         [Parameter()]
         [string]$Scope = "https://graph.windows.net/.default offline_access openid",
@@ -124,7 +128,10 @@ function Invoke-Sato {
 
         [Parameter(Mandatory = $false)]
         [ValidateSet("MsGraph", "MSTeams", "Office", "Outlook", "WinGraph", "CoreARM", "MaARM", "IntuneMam", "SharePoint", "OneDrive", "KeyVault")]
-        [string]$PredefinedScope
+        [string]$PredefinedScope, 
+
+        [Parameter()]
+        [string]$SaveToVar = "tokens"
     )
 
     
@@ -167,6 +174,11 @@ function Invoke-Sato {
             $response = Get-DeviceCodeToken -TenantID $TenantID -ClientID $ClientID -Scope $Scope -UseCAE:$UseCAE
         }
 
+        "estsauthcookie" {
+            $response = Get-EstsAuthCookieToken -ClientID $ClientID -Scope $Scope -ESTSAuthCookie:$Cookie
+        }
+
+    
         "jwt_assertion" {
             if ($Certificate) {
                 Write-Host "Using local certificate for JWT assertion" -ForegroundColor Cyan
@@ -201,11 +213,15 @@ function Invoke-Sato {
         if ($response.refresh_token) {
             Write-Host "Refresh Token:" -ForegroundColor DarkGreen
             Write-Output $response.refresh_token
+
         }
 
         if ($Decode) {
             Decode-Jwt -Token $response.access_token
         }
+
+        Set-Variable -Name $SaveToVar -Value $response -Scope Global
+        Write-Host "Tokens saved to variable: `$${SaveToVar}" -ForegroundColor Green
     }
 }
 
