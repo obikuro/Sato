@@ -71,6 +71,20 @@ $PredefinedGrantTypes = @(
 )
 
 
+$PredefinedUserAgents = @{
+    Windows10Chrome  = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    Windows10Edge    = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0"
+    Windows10Firefox = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0"
+    MacOSSafari      = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15"
+    MacOSChrome      = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    LinuxFirefox     = "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"
+    AndroidChrome    = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+    iOSSafari        = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1"
+    ChromeOS         = "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    WindowsPhone     = "Mozilla/5.0 (Windows Phone 10.0; Android 6.0.1; Microsoft; Lumia 950) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Mobile Safari/537.36 Edge/15.15254"
+}
+
+
 function Invoke-Sato {
     param (
         [Parameter(Mandatory = $true)]
@@ -124,12 +138,28 @@ function Invoke-Sato {
 
         [Parameter(Mandatory = $false)]
         [ValidateSet("MsGraph", "MSTeams", "Office", "Outlook", "WinGraph", "CoreARM", "MaARM", "IntuneMam", "SharePoint", "OneDrive", "KeyVault")]
-        [string]$PredefinedScope
+        [string]$PredefinedScope,
+
+        [Parameter()]
+        [string]$UserAgent,
+
+        [Parameter()]
+        [ValidateSet("Windows10Chrome", "Windows10Edge", "Windows10Firefox", "MacOSSafari", "MacOSChrome", "LinuxFirefox", "AndroidChrome", "iOSSafari", "ChromeOS", "WindowsPhone")]
+        [string]$PredefinedUserAgent
     )
 
-    
+
     if ($PredefinedScope) {
         $Scope = $PredefinedScopes[$PredefinedScope]
+    }
+
+
+    if ($PredefinedUserAgent) {
+        $UserAgent = $PredefinedUserAgents[$PredefinedUserAgent]
+    }
+
+    if ($UserAgent) {
+        Write-Host "Using User-Agent: $UserAgent" -ForegroundColor Cyan
     }
 
     
@@ -152,25 +182,25 @@ function Invoke-Sato {
 
     switch ($GrantType) {
         "password" {
-            $response = Get-PasswordToken -TenantID $TenantID -ClientID $ClientID -Username $Username -Password $Password -Scope $Scope
+            $response = Get-PasswordToken -TenantID $TenantID -ClientID $ClientID -Username $Username -Password $Password -Scope $Scope -UserAgent $UserAgent
         }
 
         "client_credentials" {
-            $response = Get-ClientCredentialsToken -TenantID $TenantID -ClientID $ClientID -ClientSecret $ClientSecret -Scope $Scope
+            $response = Get-ClientCredentialsToken -TenantID $TenantID -ClientID $ClientID -ClientSecret $ClientSecret -Scope $Scope -UserAgent $UserAgent
         }
 
         "refresh_token" {
-            $response = Get-RefreshToken -TenantID $TenantID -ClientID $ClientID -RefreshToken $RefreshToken -Scope $Scope
+            $response = Get-RefreshToken -TenantID $TenantID -ClientID $ClientID -RefreshToken $RefreshToken -Scope $Scope -UserAgent $UserAgent
         }
 
         "device_code" {
-            $response = Get-DeviceCodeToken -TenantID $TenantID -ClientID $ClientID -Scope $Scope -UseCAE:$UseCAE
+            $response = Get-DeviceCodeToken -TenantID $TenantID -ClientID $ClientID -Scope $Scope -UseCAE:$UseCAE -UserAgent $UserAgent
         }
 
         "jwt_assertion" {
             if ($Certificate) {
                 Write-Host "Using local certificate for JWT assertion" -ForegroundColor Cyan
-                $response = Get-CertificateToken -ClientCertificate $Certificate -TenantID $TenantID -AppID $AppID -Scope $Scope
+                $response = Get-CertificateToken -ClientCertificate $Certificate -TenantID $TenantID -AppID $AppID -Scope $Scope -UserAgent $UserAgent
             } else {
                 Write-Error "A certificate must be provided for JWT assertion."
                 return
@@ -180,8 +210,8 @@ function Invoke-Sato {
         "jwt_assertion_sign" {
             if ($KeyVaultName -and $CertName -and $KeyToken) {
                 Write-Host "Using Azure Key Vault for JWT assertion signing" -ForegroundColor DarkGreen
-                $response = Get-KeyVaultSignedJwt -TenantID $TenantID -AppID $AppID -KeyVaultName $KeyVaultName -CertName $CertName -KeyToken $KeyToken -Scope $Scope
-                
+                $response = Get-KeyVaultSignedJwt -TenantID $TenantID -AppID $AppID -KeyVaultName $KeyVaultName -CertName $CertName -KeyToken $KeyToken -Scope $Scope -UserAgent $UserAgent
+
             } else {
                 Write-Error "Key Vault details must be provided for JWT assertion signing."
                 return

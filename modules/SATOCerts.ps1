@@ -66,7 +66,10 @@ function Get-KeyVaultSignedJwt {
         [string]$KeyToken,
 
         [Parameter()]
-        [string]$Scope = "https://graph.windows.net/.default offline_access openid"
+        [string]$Scope = "https://graph.windows.net/.default offline_access openid",
+
+        [Parameter()]
+        [string]$UserAgent
     )
 
     $vaultUri = "https://$KeyVaultName.vault.azure.net"
@@ -110,6 +113,7 @@ $signedJWT = $unsignedJwt + "." + $signature
     
     $uri = "https://login.microsoftonline.com/$TenantID/oauth2/v2.0/token"
     $headers = @{'Content-Type' = 'application/x-www-form-urlencoded'}
+    if ($UserAgent) { $headers['User-Agent'] = $UserAgent }
     $body = @{
         'client_id' = $AppID
         'client_assertion' = $signedJWT
@@ -119,7 +123,7 @@ $signedJWT = $unsignedJwt + "." + $signature
     }
 
     try {
-        
+
         $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
         return $response
     } catch {
@@ -140,7 +144,10 @@ function Get-CertificateToken {
         [string]$AppID,
 
         [Parameter()]
-        [string]$Scope = "https://graph.windows.net/.default offline_access openid"
+        [string]$Scope = "https://graph.windows.net/.default offline_access openid",
+
+        [Parameter()]
+        [string]$UserAgent
     )
 
     $audience = "https://login.microsoftonline.com/$TenantID/oauth2/v2.0/token"
@@ -171,6 +178,7 @@ function Get-CertificateToken {
     
     $uri = "https://login.microsoftonline.com/$TenantID/oauth2/v2.0/token"
     $headers = @{'Content-Type' = 'application/x-www-form-urlencoded'}
+    if ($UserAgent) { $headers['User-Agent'] = $UserAgent }
     $body = @{
         'client_id' = $AppID
         'client_assertion' = $signedJWT
@@ -180,7 +188,7 @@ function Get-CertificateToken {
     }
 
     try {
-        
+
         $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
         return $response
     } catch {

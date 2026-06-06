@@ -32,6 +32,9 @@ Moreover, **tokens can bypass Conditional Access Policies (CAP)** that enforce M
   
 - **In-Depth JWT Analysis**:
    - Decode and analyze JWT tokens to understand the permissions granted, token expiration, and key claims, which are essential for understanding the scope and longevity of the access gained.
+
+- **Custom User-Agent (Conditional Access bypass)**:
+   - Send token requests as an arbitrary OS / browser via `-UserAgent` or a predefined preset via `-PredefinedUserAgent`. Useful against misconfigured device-platform Conditional Access policies  e.g. a CAP that targets "Specific device platforms" with only some OSes ticked will let a request claiming an un-ticked platform (such as ChromeOS) through.
  
 
 
@@ -152,6 +155,26 @@ The `-UseCAE` flag is used to enable Continuous Access Evaluation (CAE). When yo
 
 ### Family of Client IDs (FOCI)
 By default, SATO uses a Microsoft client ID, which is part of the Family of Client IDs (FOCI). This allows for seamless multi-tenant access without providing a client secret.
+
+
+### Custom User-Agent (`-UserAgent` / `-PredefinedUserAgent`)
+
+Override the `User-Agent` header on the token request to claim a different OS / browser. Works on every grant type (`password`, `client_credentials`, `refresh_token`, `device_code`, `jwt_assertion`, `jwt_assertion_sign`). When the flag is omitted, the default PowerShell UA is used and behavior is unchanged.
+
+**Why it matters:** when a device-platform Conditional Access policy is misconfigured  typically scoped to "Specific device platforms" with only a subset of OSes ticked instead of "Any device"  a request that announces itself as an un-ticked platform falls outside the policy. `ChromeOS` is the canonical example for a CAP scoped to Windows / macOS / Linux / iOS / Android / Windows Phone.
+
+**Predefined presets:** `Windows10Chrome`, `Windows10Edge`, `Windows10Firefox`, `MacOSSafari`, `MacOSChrome`, `LinuxFirefox`, `AndroidChrome`, `iOSSafari`, `ChromeOS`, `WindowsPhone`.
+
+```powershell
+# Preset
+Invoke-Sato -GrantType password -TenantID <tid> -Username <u> -Password <p> `
+            -PredefinedScope MsGraph -PredefinedUserAgent ChromeOS
+
+# Arbitrary UA string
+Invoke-Sato -GrantType refresh_token -TenantID <tid> -RefreshToken <rt> `
+            -PredefinedScope MsGraph `
+            -UserAgent "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+```
 
 
 ## TBRES Token Hunter 

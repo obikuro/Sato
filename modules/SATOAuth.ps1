@@ -16,7 +16,10 @@ function Get-PasswordToken {
         [string]$Password,
 
         [Parameter(Mandatory = $true)]
-        [string]$Scope
+        [string]$Scope,
+
+        [Parameter()]
+        [string]$UserAgent
     )
 
     try {
@@ -29,7 +32,15 @@ function Get-PasswordToken {
             scope      = $Scope
         }
 
-        $response = Invoke-RestMethod -Uri $Url -Method POST -ContentType "application/x-www-form-urlencoded" -Body $RequestParams
+        $restArgs = @{
+            Uri         = $Url
+            Method      = 'POST'
+            ContentType = 'application/x-www-form-urlencoded'
+            Body        = $RequestParams
+        }
+        if ($UserAgent) { $restArgs.Headers = @{ 'User-Agent' = $UserAgent } }
+
+        $response = Invoke-RestMethod @restArgs
         return $response
     } catch {
         Write-Error "Error obtaining password-based access token: $_"
@@ -48,7 +59,10 @@ function Get-ClientCredentialsToken {
         [string]$ClientSecret,
 
         [Parameter(Mandatory = $true)]
-        [string]$Scope
+        [string]$Scope,
+
+        [Parameter()]
+        [string]$UserAgent
     )
 
     try {
@@ -60,7 +74,15 @@ function Get-ClientCredentialsToken {
             scope         = $Scope
         }
 
-        $response = Invoke-RestMethod -Uri $Url -Method POST -ContentType "application/x-www-form-urlencoded" -Body $RequestParams
+        $restArgs = @{
+            Uri         = $Url
+            Method      = 'POST'
+            ContentType = 'application/x-www-form-urlencoded'
+            Body        = $RequestParams
+        }
+        if ($UserAgent) { $restArgs.Headers = @{ 'User-Agent' = $UserAgent } }
+
+        $response = Invoke-RestMethod @restArgs
         return $response
     } catch {
         Write-Error "Error obtaining client credentials-based access token: $_"
@@ -79,7 +101,10 @@ function Get-RefreshToken {
         [string]$RefreshToken,
 
         [Parameter(Mandatory = $true)]
-        [string]$Scope
+        [string]$Scope,
+
+        [Parameter()]
+        [string]$UserAgent
     )
 
     try {
@@ -91,7 +116,15 @@ function Get-RefreshToken {
             scope         = $Scope
         }
 
-        $response = Invoke-RestMethod -Uri $Url -Method POST -ContentType "application/x-www-form-urlencoded" -Body $RequestParams
+        $restArgs = @{
+            Uri         = $Url
+            Method      = 'POST'
+            ContentType = 'application/x-www-form-urlencoded'
+            Body        = $RequestParams
+        }
+        if ($UserAgent) { $restArgs.Headers = @{ 'User-Agent' = $UserAgent } }
+
+        $response = Invoke-RestMethod @restArgs
         return $response
     } catch {
         Write-Error "Error obtaining refresh token-based access token: $_"
@@ -111,18 +144,32 @@ function Get-DeviceCodeToken {
         [string]$Scope ,
 
         [Parameter()]
-        [switch]$UseCAE
+        [switch]$UseCAE,
+
+        [Parameter()]
+        [string]$UserAgent
     )
 
     try {
-        
+
+        $uaHeaders = @{}
+        if ($UserAgent) { $uaHeaders['User-Agent'] = $UserAgent }
+
         $deviceCodeUrl = "https://login.microsoftonline.com/$TenantID/oauth2/v2.0/devicecode"
         $deviceCodeBody = @{
             client_id = $ClientID
             scope     = $Scope
         }
 
-        $authResponse = Invoke-RestMethod -Uri $deviceCodeUrl -Method Post -ContentType "application/x-www-form-urlencoded" -Body $deviceCodeBody
+        $dcArgs = @{
+            Uri         = $deviceCodeUrl
+            Method      = 'Post'
+            ContentType = 'application/x-www-form-urlencoded'
+            Body        = $deviceCodeBody
+        }
+        if ($UserAgent) { $dcArgs.Headers = $uaHeaders }
+
+        $authResponse = Invoke-RestMethod @dcArgs
         
         
         Write-Host $authResponse.message -ForegroundColor Yellow
@@ -156,7 +203,15 @@ function Get-DeviceCodeToken {
             }
 
             try {
-                $response = Invoke-RestMethod -Uri $tokenUrl -Method Post -ContentType "application/x-www-form-urlencoded" -Body $tokenBody -ErrorAction SilentlyContinue
+                $tokArgs = @{
+                    Uri         = $tokenUrl
+                    Method      = 'Post'
+                    ContentType = 'application/x-www-form-urlencoded'
+                    Body        = $tokenBody
+                    ErrorAction = 'SilentlyContinue'
+                }
+                if ($UserAgent) { $tokArgs.Headers = $uaHeaders }
+                $response = Invoke-RestMethod @tokArgs
             } catch {
                 $errorDetails = $_.ErrorDetails.Message | ConvertFrom-Json
                 $continue = $errorDetails.error -eq "authorization_pending"
